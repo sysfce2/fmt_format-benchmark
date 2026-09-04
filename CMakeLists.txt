@@ -172,10 +172,16 @@ else()
 	DEPENDS tinyformat_speed_test)
 endif ()
 
+set(BLOAT_TEST_DEPENDS fmt)
+if (TARGET fmt-module)
+  list(APPEND BLOAT_TEST_DEPENDS fmt-module)
+endif ()
 add_custom_target(bloat-test
-                  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/bloat-test.py
+                  COMMAND ${CMAKE_COMMAND} -E env
+                          CXX=${CMAKE_CXX_COMPILER}
+                          ${CMAKE_CURRENT_SOURCE_DIR}/bloat-test.py
                           -I${Boost_INCLUDE_DIRS}
-                  DEPENDS fmt)
+                  DEPENDS ${BLOAT_TEST_DEPENDS})
 
 add_custom_target(variadic-test
                   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/variadic-test.py

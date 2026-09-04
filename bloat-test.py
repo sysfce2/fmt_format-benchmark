@@ -42,6 +42,18 @@ void doFormat_a() {
     folly::format("{}:{}:{}:{}:{}\n", "somefile.cpp", 42, 1, 2, "asdf");
 }
 
+#elif defined(USE_FMT_MODULE)
+
+import fmt;
+
+void doFormat_a() {
+  fmt::print("{}\n", "somefile.cpp");
+  fmt::print("{}:{}\n", "somefile.cpp", 42);
+  fmt::print("{}:{}:{}\n", "somefile.cpp", 42, "asdf");
+  fmt::print("{}:{}:{}:{}\n", "somefile.cpp", 42, 1, "asdf");
+  fmt::print("{}:{}:{}:{}:{}\n", "somefile.cpp", 42, 1, 2, "asdf");
+}
+
 #elif defined(USE_FMT)
 
 #include "fmt/base.h"
@@ -147,18 +159,19 @@ with ExitStack() as stack:
   main_file.write('}')
 
 # Find compiler.
-compiler_path = None
-for path in os.getenv('PATH').split(os.pathsep):
-  filename = os.path.join(path, 'g++')
-  if os.path.exists(filename):
-    if os.path.islink(filename) and \
-       os.path.basename(os.path.realpath(filename)) == 'ccache':
-      # Don't use ccache.
-      print('Ignoring ccache link at', filename)
-      continue
-    compiler_path = filename
-    break
-print('Using compiler', filename)
+compiler_path = os.getenv('CXX')
+if not compiler_path:
+  for path in os.getenv('PATH').split(os.pathsep):
+    filename = os.path.join(path, 'g++')
+    if os.path.exists(filename):
+      if os.path.islink(filename) and \
+         os.path.basename(os.path.realpath(filename)) == 'ccache':
+        # Don't use ccache.
+        print('Ignoring ccache link at', filename)
+        continue
+      compiler_path = filename
+      break
+print('Using compiler', compiler_path)
 
 class Result:
   pass
@@ -214,6 +227,17 @@ methods = [
   ('Folly Format' , ['-DUSE_FOLLY', '-lfolly']),
   ('stb_sprintf'  , ['-DUSE_STB_SPRINTF']),
 ]
+
+fmt_module = 'fmt/fmt.pcm'
+fmt_module_library = 'fmt/libfmt-module.so'
+if not os.path.exists(fmt_module_library):
+  fmt_module_library = fmt_module_library.replace('.so', '.dylib')
+if os.path.exists(fmt_module) and os.path.exists(fmt_module_library):
+  methods.insert(3, (
+    'fmt module',
+    ['-DUSE_FMT_MODULE', '-std=gnu++20', '-fcxx-modules',
+     '-fmodule-file=fmt=' + fmt_module, fmt_module_library]
+  ))
 
 def format_field(field, format = '', width = ''):
   return '{:{}{}}'.format(field, width, format)
