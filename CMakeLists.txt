@@ -176,11 +176,15 @@ set(BLOAT_TEST_DEPENDS fmt)
 if (TARGET fmt-module)
   list(APPEND BLOAT_TEST_DEPENDS fmt-module)
 endif ()
+set(BLOAT_TEST_ARGS)
+if (Boost_INCLUDE_DIRS)
+  list(APPEND BLOAT_TEST_ARGS -I${Boost_INCLUDE_DIRS})
+endif ()
 add_custom_target(bloat-test
                   COMMAND ${CMAKE_COMMAND} -E env
                           CXX=${CMAKE_CXX_COMPILER}
                           ${CMAKE_CURRENT_SOURCE_DIR}/bloat-test.py
-                          -I${Boost_INCLUDE_DIRS}
+                          ${BLOAT_TEST_ARGS}
                   DEPENDS ${BLOAT_TEST_DEPENDS})
 
 add_custom_target(variadic-test

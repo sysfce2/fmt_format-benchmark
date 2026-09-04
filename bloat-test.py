@@ -8,7 +8,7 @@ from __future__ import print_function
 import os, re, sys
 from contextlib import ExitStack
 from glob import glob
-from subprocess import check_call, Popen, PIPE, CalledProcessError
+from subprocess import check_call, check_output, Popen, PIPE, CalledProcessError
 from timeit import timeit
 
 template = r'''
@@ -173,6 +173,12 @@ if not compiler_path:
       break
 print('Using compiler', compiler_path)
 
+compiler_flags = []
+if sys.platform == 'darwin':
+  sdk_path = check_output(
+    ['xcrun', '--sdk', 'macosx', '--show-sdk-path'], text=True).strip()
+  compiler_flags = ['-isysroot', sdk_path]
+
 class Result:
   pass
 
@@ -184,7 +190,8 @@ def benchmark(flags):
     os.remove(output_filename)
   include_dir = '-I' + os.path.dirname(os.path.realpath(__file__))
   command = 'check_call({})'.format(
-    [compiler_path, '-std=c++17', '-o', output_filename, include_dir] + sources + flags)
+    [compiler_path, '-std=c++17', '-o', output_filename, include_dir] +
+    compiler_flags + sources + flags)
   result = Result()
   try:
     result.time = timeit(
@@ -217,11 +224,13 @@ configs = [
 fmt_library = 'fmt/libfmt.so'
 if not os.path.exists(fmt_library):
   fmt_library = fmt_library.replace('.so', '.dylib')
+fmt_include_dir = os.path.join(
+  os.path.dirname(os.path.realpath(__file__)), 'fmt', 'include')
 
 methods = [
   ('printf'       , []),
   ('IOStreams'    , ['-DUSE_IOSTREAMS']),
-  ('fmt'          , ['-DUSE_FMT', '-Ifmt/include', fmt_library]),
+  ('fmt'          , ['-DUSE_FMT', '-I' + fmt_include_dir, fmt_library]),
   ('tinyformat'   , ['-DUSE_TINYFORMAT']),
   ('Boost Format' , ['-DUSE_BOOST']),
   ('Folly Format' , ['-DUSE_FOLLY', '-lfolly']),
