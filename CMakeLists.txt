@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.14)
 
 # Joins arguments and places the results in ${result_var}.
 function(join result_var)
@@ -95,7 +95,25 @@ set(BUILD_SHARED_LIBS ON CACHE BOOL
 set(FMT_TEST TRUE CACHE BOOL "Enable fmt tests")
 add_subdirectory(fmt)
 
-find_package(Boost CONFIG)
+include(FetchContent)
+if (POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif ()
+FetchContent_Declare(
+  Boost
+  URL
+    https://github.com/boostorg/boost/releases/download/boost-1.92.0/boost-1.92.0-cmake.tar.xz
+  URL_HASH
+    SHA256=9bed76128d4e46755dbe818487788c6fceb6f72b378f4daa49b7e1e600d9088d
+)
+set(BOOST_INCLUDE_LIBRARIES format lexical_cast spirit)
+FetchContent_MakeAvailable(Boost)
+file(GLOB Boost_INCLUDE_DIRS LIST_DIRECTORIES TRUE
+     ${boost_SOURCE_DIR}/libs/*/include)
+set(BOOST_INCLUDE_FLAGS)
+foreach (include_dir ${Boost_INCLUDE_DIRS})
+  list(APPEND BOOST_INCLUDE_FLAGS -I${include_dir})
+endforeach ()
 
 set(FOLLY_DIR HINTS /Users/viz/homebrew/Cellar/folly/2022.11.14.00)
 find_path(FOLLY_INCLUDE_DIR folly/Format.h HINTS ${FOLLY_DIR}/include)
@@ -117,9 +135,7 @@ if (HAVE_PROFILER)
   target_link_libraries(tinyformat_speed_test ${PROFILER_LIB})
   set(PROFILE_DEFS ";FMT_PROFILE")
 endif ()
-if (TARGET Boost::boost)
-  target_link_libraries(tinyformat_speed_test Boost::boost)
-endif ()
+target_link_libraries(tinyformat_speed_test Boost::format)
 set_target_properties(tinyformat_speed_test PROPERTIES COMPILE_DEFINITIONS
   "SPEED_TEST;HAVE_FORMAT;_SCL_SECURE_NO_WARNINGS;${PROFILE_DEFS}")
 if (CPP11_FLAG)
@@ -176,20 +192,16 @@ set(BLOAT_TEST_DEPENDS fmt)
 if (TARGET fmt-module)
   list(APPEND BLOAT_TEST_DEPENDS fmt-module)
 endif ()
-set(BLOAT_TEST_ARGS)
-if (Boost_INCLUDE_DIRS)
-  list(APPEND BLOAT_TEST_ARGS -I${Boost_INCLUDE_DIRS})
-endif ()
 add_custom_target(bloat-test
                   COMMAND ${CMAKE_COMMAND} -E env
                           CXX=${CMAKE_CXX_COMPILER}
                           ${CMAKE_CURRENT_SOURCE_DIR}/bloat-test.py
-                          ${BLOAT_TEST_ARGS}
+                          ${BOOST_INCLUDE_FLAGS}
                   DEPENDS ${BLOAT_TEST_DEPENDS})
 
 add_custom_target(variadic-test
                   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/variadic-test.py
-                          \${ARGS} -I${Boost_INCLUDE_DIRS}
+                          \${ARGS} ${BOOST_INCLUDE_FLAGS}
                   DEPENDS fmt)
 
 enable_testing()
@@ -210,9 +222,8 @@ target_link_libraries(vararg-benchmark benchmark fmt)
 
 add_executable(int-benchmark src/int-benchmark.cc)
 target_link_libraries(int-benchmark benchmark fmt)
-if (TARGET Boost::boost)
-  target_link_libraries(int-benchmark Boost::boost)
-endif ()
+target_link_libraries(
+  int-benchmark Boost::format Boost::lexical_cast Boost::spirit)
 
 target_compile_features(int-benchmark PRIVATE cxx_relaxed_constexpr)
 
