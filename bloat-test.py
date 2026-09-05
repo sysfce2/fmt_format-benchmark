@@ -78,31 +78,6 @@ void doFormat_a() {
   std::cout << "somefile.cpp:" << 42 << ':' << 1 << ':' << 2 << ":asdf" << "\n";
 }
 
-#elif defined(USE_STB_SPRINTF)
-
-#ifdef FIRST_FILE
-#  define STB_SPRINTF_IMPLEMENTATION
-#endif
-// since this test doesn't use floating point numbers shave ~20kb
-#define STB_SPRINTF_NOFLOAT
-
-#include "src/stb_sprintf.h"
-#include <stdio.h>
-
-void doFormat_a() {
-  char buf[100];
-  stbsp_sprintf(buf, "%s\n", "somefile.cpp");
-  fputs(buf, stdout);
-  stbsp_sprintf(buf, "%s:%d\n", "somefile.cpp", 42);
-  fputs(buf, stdout);
-  stbsp_sprintf(buf, "%s:%d:%s\n", "somefile.cpp", 42, "asdf");
-  fputs(buf, stdout);
-  stbsp_sprintf(buf, "%s:%d:%d:%s\n", "somefile.cpp", 42, 1, "asdf");
-  fputs(buf, stdout);
-  stbsp_sprintf(buf, "%s:%d:%d:%d:%s\n", "somefile.cpp", 42, 1, 2, "asdf");
-  fputs(buf, stdout);
-}
-
 #else
 
 #include <stdio.h>
@@ -230,7 +205,6 @@ methods = [
   (fmt_non_modular, ['-DUSE_FMT', '-I' + fmt_include_dir, fmt_library]),
   ('Boost Format' , ['-DUSE_BOOST']),
   ('Folly Format' , ['-DUSE_FOLLY', '-lfolly']),
-  ('stb_sprintf'  , ['-DUSE_STB_SPRINTF']),
 ]
 
 fmt_module = 'fmt/fmt.pcm'
