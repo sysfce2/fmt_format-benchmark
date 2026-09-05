@@ -226,11 +226,13 @@ if not os.path.exists(fmt_library):
   fmt_library = fmt_library.replace('.so', '.dylib')
 fmt_include_dir = os.path.join(
   os.path.dirname(os.path.realpath(__file__)), 'fmt', 'include')
+fmt_non_modular = 'fmt (non-modular)'
+fmt_modular = 'fmt (modular)'
 
 methods = [
   ('printf'       , []),
   ('IOStreams'    , ['-DUSE_IOSTREAMS']),
-  ('fmt'          , ['-DUSE_FMT', '-I' + fmt_include_dir, fmt_library]),
+  (fmt_non_modular, ['-DUSE_FMT', '-I' + fmt_include_dir, fmt_library]),
   ('tinyformat'   , ['-DUSE_TINYFORMAT']),
   ('Boost Format' , ['-DUSE_BOOST']),
   ('Folly Format' , ['-DUSE_FOLLY', '-lfolly']),
@@ -241,12 +243,11 @@ fmt_module = 'fmt/fmt.pcm'
 fmt_module_library = 'fmt/libfmt-module.so'
 if not os.path.exists(fmt_module_library):
   fmt_module_library = fmt_module_library.replace('.so', '.dylib')
-if os.path.exists(fmt_module) and os.path.exists(fmt_module_library):
-  methods.insert(3, (
-    'fmt module',
-    ['-DUSE_FMT_MODULE', '-std=gnu++20', '-fcxx-modules',
-     '-fmodule-file=fmt=' + fmt_module, fmt_module_library]
-  ))
+methods.insert(3, (
+  fmt_modular,
+  ['-DUSE_FMT_MODULE', '-std=gnu++20', '-fcxx-modules',
+   '-fmodule-file=fmt=' + fmt_module, fmt_module_library]
+))
 
 def format_field(field, format = '', width = ''):
   return '{:{}{}}'.format(field, width, format)
