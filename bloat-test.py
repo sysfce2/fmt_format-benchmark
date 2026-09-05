@@ -104,20 +104,15 @@ void doFormat_a() {
 }
 
 #else
-# ifdef USE_TINYFORMAT
-#   include "src/tinyformat.h"
-#   define PRINTF tfm::printf
-# else
-#   include <stdio.h>
-#   define PRINTF ::printf
-# endif
+
+#include <stdio.h>
 
 void doFormat_a() {
-  PRINTF("%s\n", "somefile.cpp");
-  PRINTF("%s:%d\n", "somefile.cpp", 42);
-  PRINTF("%s:%d:%s\n", "somefile.cpp", 42, "asdf");
-  PRINTF("%s:%d:%d:%s\n", "somefile.cpp", 42, 1, "asdf");
-  PRINTF("%s:%d:%d:%d:%s\n", "somefile.cpp", 42, 1, 2, "asdf");
+  ::printf("%s\n", "somefile.cpp");
+  ::printf("%s:%d\n", "somefile.cpp", 42);
+  ::printf("%s:%d:%s\n", "somefile.cpp", 42, "asdf");
+  ::printf("%s:%d:%d:%s\n", "somefile.cpp", 42, 1, "asdf");
+  ::printf("%s:%d:%d:%d:%s\n", "somefile.cpp", 42, 1, 2, "asdf");
 }
 #endif
 '''
@@ -233,7 +228,6 @@ methods = [
   ('printf'       , []),
   ('IOStreams'    , ['-DUSE_IOSTREAMS']),
   (fmt_non_modular, ['-DUSE_FMT', '-I' + fmt_include_dir, fmt_library]),
-  ('tinyformat'   , ['-DUSE_TINYFORMAT']),
   ('Boost Format' , ['-DUSE_BOOST']),
   ('Folly Format' , ['-DUSE_FOLLY', '-lfolly']),
   ('stb_sprintf'  , ['-DUSE_STB_SPRINTF']),
